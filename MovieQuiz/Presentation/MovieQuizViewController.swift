@@ -85,6 +85,29 @@ final class MovieQuizViewController: UIViewController {
         ]
     // MARK: - Overrides Methods
     override func viewDidLoad() {
+        super.viewDidLoad()
+        setupView()
+        self.show(quiz: convert(model: questions[currentQuestionIndex]))
+        
+        
+    }
+    // MARK: - IB Actions
+    @IBAction private func noButtonClicked(_ sender: Any) {
+        let currentQuestion = questions[currentQuestionIndex]
+        let givenAnswer = false
+        showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
+        changeStateButton(isEnabled: false)
+    }
+    
+    @IBAction private func yesButtonClicked(_ sender: Any) {
+        let currentQuestion = questions[currentQuestionIndex]
+        let givenAnswer = true
+        showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
+        changeStateButton(isEnabled: false)
+    }
+    // MARK: - Private Methods
+    // метод для насторойки UI элементов
+    private func setupView() {
         questionTitleLabel.font = UIFont(name: "YSDisplay-Medium", size: 20)
         questionTitleLabel.textColor = .ypWhiteIOS
         questionTitleLabel.backgroundColor = .ypBlackIOS
@@ -95,7 +118,7 @@ final class MovieQuizViewController: UIViewController {
         
         previewImage.backgroundColor = .ypWhiteIOS
         previewImage.layer.cornerRadius = 20
-        
+        //TESTING
         questionLabel.font = UIFont(name: "YSDisplay-Bold", size: 23)
         questionLabel.textColor = .ypWhiteIOS
         questionLabel.backgroundColor = .ypBlackIOS
@@ -104,33 +127,17 @@ final class MovieQuizViewController: UIViewController {
         yesButton.tintColor = .ypBlackIOS
         yesButton.backgroundColor = .ypWhiteIOS
         yesButton.layer.cornerRadius = 15
-        
+
         noButton.titleLabel?.font = UIFont(name: "YSDisplay-Medium", size: 20)
         noButton.tintColor = .ypBlackIOS
         noButton.backgroundColor = .ypWhiteIOS
         noButton.layer.cornerRadius = 15
-        
-        self.show(quiz: convert(model: questions[currentQuestionIndex]))
-        
-        super.viewDidLoad()
     }
-    // MARK: - IB Actions
-    @IBAction private func noButtonClicked(_ sender: Any) {
-        let currentQuestion = questions[currentQuestionIndex]
-        let givenAnswer = false
-        showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
-        yesButton.isEnabled = false
-        noButton.isEnabled = false
+    // метод для включения выключения кнопок
+    private func changeStateButton(isEnabled: Bool) {
+        noButton.isEnabled = isEnabled
+        yesButton.isEnabled = isEnabled
     }
-    
-    @IBAction private func yesButtonClicked(_ sender: Any) {
-        let currentQuestion = questions[currentQuestionIndex]
-        let givenAnswer = true
-        showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
-        yesButton.isEnabled = false
-        noButton.isEnabled = false
-    }
-    // MARK: - Private Methods
     // метод конвертации, который принимает моковый вопрос и возвращает вью модель для экрана вопроса
     private func convert(model: QuizQuestion) -> QuizStepViewModel {
         let questionStep = QuizStepViewModel( // 1
@@ -176,8 +183,7 @@ final class MovieQuizViewController: UIViewController {
                 previewImage.layer.borderWidth = 0
             show(quiz: viewModel)
         }
-        yesButton.isEnabled = true
-        noButton.isEnabled = true
+        changeStateButton(isEnabled: true)
     }
     // приватный метод для показа результатов раунда квиза
     private func show(quiz result: QuizResultsViewModel) {
