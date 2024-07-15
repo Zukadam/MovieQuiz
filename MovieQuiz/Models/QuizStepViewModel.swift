@@ -1,7 +1,7 @@
 import UIKit
 
 // вью модель для состояния "Вопрос показан"
-private struct QuizStepViewModel {
+struct QuizStepViewModel { // remove private
     // картинка с афишей фильма с типом UIImage
     let image: UIImage
     // вопрос о рейтинге квиза

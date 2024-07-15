@@ -1,6 +1,6 @@
 import Foundation
 
-private struct QuizQuestion {
+struct QuizQuestion { // remove private
     // строка с названием фильма,
     let image: String
     // строка с вопросом о рейтинге фильма

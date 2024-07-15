@@ -17,25 +17,32 @@ final class MovieQuizViewController: UIViewController {
     // общее кол-во вопросов
     private let questionsAmount: Int = 10
     // фабрика вопросов
-    private var questionFactory: QuestionFactory = QuestionFactory()
+    private var questionFactory: QuestionFactoryProtocol = QuestionFactory()
     // вопрос который видит пользователь
-    private var currentQuestion: QuizQuestion?
+    private var currentQuestion: QuizQuestion? // changed private in ../Models/QuizQuestion.swift
     // MARK: - Overrides Methods
     override func viewDidLoad() {
         super.viewDidLoad()
         setupView()
-        self.show(quiz: convert(model: questions[currentQuestionIndex]))
+//        self.show(quiz: convert(model: questions[currentQuestionIndex]))
+        if let firstQuestion = questionFactory.requestNextQuestion() {
+            currentQuestion = firstQuestion
+            let viewModel = convert(model: firstQuestion)
+            show(quiz: viewModel)
+        }
     }
     // MARK: - IB Actions
     @IBAction private func noButtonClicked(_ sender: Any) {
-        let currentQuestion = questions[currentQuestionIndex]
+//        let currentQuestion = questions[currentQuestionIndex]
+        guard let currentQuestion else { return }
         let givenAnswer = false
         showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
         changeStateButton(isEnabled: false)
     }
     
     @IBAction private func yesButtonClicked(_ sender: Any) {
-        let currentQuestion = questions[currentQuestionIndex]
+//        let currentQuestion = questions[currentQuestionIndex]
+        guard let currentQuestion else { return }
         let givenAnswer = true
         showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
         changeStateButton(isEnabled: false)
@@ -77,10 +84,10 @@ final class MovieQuizViewController: UIViewController {
     
     // метод конвертации, который принимает моковый вопрос и возвращает вью модель для экрана вопроса
     private func convert(model: QuizQuestion) -> QuizStepViewModel {
-        let questionStep = QuizStepViewModel( // 1
-            image: UIImage(named: model.image) ?? UIImage(), // 2
-            question: model.text, // 3
-            questionNumber: "\(currentQuestionIndex + 1)/\(questions.count)") // 4
+        let questionStep = QuizStepViewModel(
+            image: UIImage(named: model.image) ?? UIImage(),
+            question: model.text,
+            questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)")
         return questionStep
     }
     
@@ -107,8 +114,10 @@ final class MovieQuizViewController: UIViewController {
     
     // приватный метод, который содержит логику перехода в один из сценариев
     private func showNextQuestionOrResults() {
-        if currentQuestionIndex == questions.count - 1 {
-            let text = "Ваш результат: \(correctAnswers)/10"
+        if currentQuestionIndex == questionsAmount - 1 { // if currentQuestionIndex == questions.count - 1
+            let text = correctAnswers == questionsAmount ?
+                "Поздравляем, вы ответили на 10 из 10!" :
+                "Вы ответили на \(correctAnswers) из 10, попробуйте ещё раз!"// let text = "Ваш результат: \(correctAnswers)/10"
             let viewModel = QuizResultsViewModel(
                 title: "Этот раунд окончен!",
                 text: text,
@@ -117,12 +126,18 @@ final class MovieQuizViewController: UIViewController {
             previewImage.layer.borderWidth = 0
 
             } else { // 2
-            currentQuestionIndex += 1
-            // идём в состояние "Вопрос показан"
-            let nextQuestion = questions[currentQuestionIndex]
-            let viewModel = convert(model: nextQuestion)
-                previewImage.layer.borderWidth = 0
-            show(quiz: viewModel)
+                currentQuestionIndex += 1
+                // идём в состояние "Вопрос показан"
+//                let nextQuestion = questions[currentQuestionIndex]
+//                let viewModel = convert(model: nextQuestion)
+//                previewImage.layer.borderWidth = 0
+//                show(quiz: viewModel)
+                if let nextQuestion = questionFactory.requestNextQuestion() {
+                    currentQuestion = nextQuestion
+                    let viewModel = convert(model: nextQuestion)
+                    show(quiz: viewModel)
+                }
+                
         }
         changeStateButton(isEnabled: true)
     }
@@ -139,9 +154,14 @@ final class MovieQuizViewController: UIViewController {
             guard let self else { return }
             self.currentQuestionIndex = 0
             self.correctAnswers = 0
-            let firstQuestion = self.questions[self.currentQuestionIndex]
-            let viewModel = self.convert(model: firstQuestion)
-            self.show(quiz: viewModel)
+//            let firstQuestion = self.questions[self.currentQuestionIndex]
+//            let viewModel = self.convert(model: firstQuestion)
+//            self.show(quiz: viewModel)
+            if let firstQuestion = self.questionFactory.requestNextQuestion() {
+                self.currentQuestion = firstQuestion
+                let viewModel = self.convert(model: firstQuestion)
+                self.show(quiz: viewModel)
+            }
         }
         alert.addAction(action)
         self.present(alert, animated: true, completion: nil)
