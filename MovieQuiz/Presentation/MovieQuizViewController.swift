@@ -8,83 +8,18 @@ final class MovieQuizViewController: UIViewController {
     @IBOutlet private weak var questionLabel: UILabel!
     @IBOutlet private weak var yesButton: UIButton!
     @IBOutlet private weak var noButton: UIButton!
-    // MARK: - Private Structs
-    private struct QuizQuestion {
-        // строка с названием фильма,
-        let image: String
-        // строка с вопросом о рейтинге фильма
-        let text: String
-        // булевое значение (true, false), правильный ответ на вопрос
-        let correctAnswer: Bool
-    }
     
-    // вью модель для состояния "Вопрос показан"
-    private struct QuizStepViewModel {
-        // картинка с афишей фильма с типом UIImage
-        let image: UIImage
-        // вопрос о рейтинге квиза
-        let question: String
-        // строка с порядковым номером этого вопроса (ex. "1/10")
-        let questionNumber: String
-    }
-    
-    // для состояния "Результат квиза"
-    private struct QuizResultsViewModel {
-        // строка с заголовком алерта
-        let title: String
-        // строка с текстом о количестве набранных очков
-        let text: String
-        // текст для кнопки алерта
-        let buttonText: String
-    }
     // MARK: - Private Properties
     // переменная с индексом текущего вопроса, начальное значение 0
     private var currentQuestionIndex = 0
     // переменная со счётчиком правильных ответов
     private var correctAnswers = 0
-    // массив вопросов
-    private let questions: [QuizQuestion] = [
-            QuizQuestion(
-                image: "The Godfather",
-                text: "Рейтинг этого фильма больше чем 6?",
-                correctAnswer: true),
-            QuizQuestion(
-                image: "The Dark Knight",
-                text: "Рейтинг этого фильма больше чем 6?",
-                correctAnswer: true),
-            QuizQuestion(
-                image: "Kill Bill",
-                text: "Рейтинг этого фильма больше чем 6?",
-                correctAnswer: true),
-            QuizQuestion(
-                image: "The Avengers",
-                text: "Рейтинг этого фильма больше чем 6?",
-                correctAnswer: true),
-            QuizQuestion(
-                image: "Deadpool",
-                text: "Рейтинг этого фильма больше чем 6?",
-                correctAnswer: true),
-            QuizQuestion(
-                image: "The Green Knight",
-                text: "Рейтинг этого фильма больше чем 6?",
-                correctAnswer: true),
-            QuizQuestion(
-                image: "Old",
-                text: "Рейтинг этого фильма больше чем 6?",
-                correctAnswer: false),
-            QuizQuestion(
-                image: "The Ice Age Adventures of Buck Wild",
-                text: "Рейтинг этого фильма больше чем 6?",
-                correctAnswer: false),
-            QuizQuestion(
-                image: "Tesla",
-                text: "Рейтинг этого фильма больше чем 6?",
-                correctAnswer: false),
-            QuizQuestion(
-                image: "Vivarium",
-                text: "Рейтинг этого фильма больше чем 6?",
-                correctAnswer: false)
-        ]
+    // общее кол-во вопросов
+    private let questionsAmount: Int = 10
+    // фабрика вопросов
+    private var questionFactory: QuestionFactory = QuestionFactory()
+    // вопрос который видит пользователь
+    private var currentQuestion: QuizQuestion?
     // MARK: - Overrides Methods
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -163,9 +98,10 @@ final class MovieQuizViewController: UIViewController {
         previewImage.layer.borderWidth = 8
         previewImage.layer.borderColor = isCorrect ? UIColor.ypGreen.cgColor : UIColor.ypRed.cgColor
         // запускаем задачу через 1 секунду c помощью диспетчера задач
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-           // код, который мы хотим вызвать через 1 секунду
-           self.showNextQuestionOrResults()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            guard let self else { return }
+           // код, который мы хотим вызвать через 0.5 секунды
+            self.showNextQuestionOrResults()
         }
     }
     
@@ -199,7 +135,8 @@ final class MovieQuizViewController: UIViewController {
             message: result.text,
             preferredStyle: .alert
         )
-        let action = UIAlertAction(title: result.buttonText, style: .default) { _ in
+        let action = UIAlertAction(title: result.buttonText, style: .default) { [weak self] _ in
+            guard let self else { return }
             self.currentQuestionIndex = 0
             self.correctAnswers = 0
             let firstQuestion = self.questions[self.currentQuestionIndex]
