@@ -1,6 +1,6 @@
 import UIKit
 
-final class MovieQuizViewController: UIViewController {
+final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     // MARK: - IB Outlets
     @IBOutlet private weak var questionTitleLabel: UILabel!
     @IBOutlet private weak var indexLabel: UILabel!
@@ -17,19 +17,23 @@ final class MovieQuizViewController: UIViewController {
     // общее кол-во вопросов
     private let questionsAmount: Int = 10
     // фабрика вопросов
-    private var questionFactory: QuestionFactoryProtocol = QuestionFactory()
+    private var questionFactory: QuestionFactoryProtocol?
     // вопрос который видит пользователь
-    private var currentQuestion: QuizQuestion? // changed private in ../Models/QuizQuestion.swift
+    private var currentQuestion: QuizQuestion?
     // MARK: - Overrides Methods
     override func viewDidLoad() {
         super.viewDidLoad()
         setupView()
-//        self.show(quiz: convert(model: questions[currentQuestionIndex]))
-        if let firstQuestion = questionFactory.requestNextQuestion() {
-            currentQuestion = firstQuestion
-            let viewModel = convert(model: firstQuestion)
-            show(quiz: viewModel)
-        }
+//        if let firstQuestion = questionFactory.requestNextQuestion() {
+//            currentQuestion = firstQuestion
+//            let viewModel = convert(model: firstQuestion)
+//            show(quiz: viewModel)
+//        }
+        let questionFactory = QuestionFactory() // 2
+        questionFactory.delegate = self         // 3
+        self.questionFactory = questionFactory  // 4
+
+        questionFactory.requestNextQuestion()
     }
     // MARK: - IB Actions
     @IBAction private func noButtonClicked(_ sender: Any) {
@@ -46,6 +50,20 @@ final class MovieQuizViewController: UIViewController {
         let givenAnswer = true
         showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
         changeStateButton(isEnabled: false)
+    }
+    
+    // MARK: - Public Methods
+    func didReceiveNextQuestion(question: QuizQuestion?) {
+        guard let question = question else {
+            return
+        }
+
+        currentQuestion = question
+        let viewModel = convert(model: question)
+        
+        DispatchQueue.main.async { [weak self] in
+            self?.show(quiz: viewModel)
+        }
     }
     // MARK: - Private Methods
     // метод для насторойки UI элементов
@@ -104,7 +122,7 @@ final class MovieQuizViewController: UIViewController {
         previewImage.layer.masksToBounds = true
         previewImage.layer.borderWidth = 8
         previewImage.layer.borderColor = isCorrect ? UIColor.ypGreen.cgColor : UIColor.ypRed.cgColor
-        // запускаем задачу через 1 секунду c помощью диспетчера задач
+        // запускаем задачу через 0.5 секунду c помощью диспетчера задач
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             guard let self else { return }
            // код, который мы хотим вызвать через 0.5 секунды
@@ -132,11 +150,8 @@ final class MovieQuizViewController: UIViewController {
 //                let viewModel = convert(model: nextQuestion)
 //                previewImage.layer.borderWidth = 0
 //                show(quiz: viewModel)
-                if let nextQuestion = questionFactory.requestNextQuestion() {
-                    currentQuestion = nextQuestion
-                    let viewModel = convert(model: nextQuestion)
-                    show(quiz: viewModel)
-                }
+                previewImage.layer.borderWidth = 0
+                self.questionFactory?.requestNextQuestion()
                 
         }
         changeStateButton(isEnabled: true)
@@ -157,11 +172,7 @@ final class MovieQuizViewController: UIViewController {
 //            let firstQuestion = self.questions[self.currentQuestionIndex]
 //            let viewModel = self.convert(model: firstQuestion)
 //            self.show(quiz: viewModel)
-            if let firstQuestion = self.questionFactory.requestNextQuestion() {
-                self.currentQuestion = firstQuestion
-                let viewModel = self.convert(model: firstQuestion)
-                self.show(quiz: viewModel)
-            }
+            questionFactory?.requestNextQuestion()
         }
         alert.addAction(action)
         self.present(alert, animated: true, completion: nil)

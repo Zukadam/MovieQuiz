@@ -4,7 +4,7 @@ class QuestionFactory: QuestionFactoryProtocol {
     // MARK: - IB Outlets
 
     // MARK: - Public Properties
-
+    weak var delegate: QuestionFactoryDelegate?
     // MARK: - Private Properties
     // массив вопросов
     private let questions: [QuizQuestion] = [
@@ -56,9 +56,13 @@ class QuestionFactory: QuestionFactoryProtocol {
     // MARK: - IB Actions
 
     // MARK: - Public Methods
-    func requestNextQuestion() -> QuizQuestion? {
-        guard let index = (0..<questions.count).randomElement() else { return nil }
-        return questions[safe: index]
+    func requestNextQuestion() {
+        guard let index = (0..<questions.count).randomElement() else {
+            delegate?.didReceiveNextQuestion(question: nil)
+            return
+        }
+        let question =  questions[safe: index]
+        delegate?.didReceiveNextQuestion(question: question)
     }
     // MARK: - Private Methods
 }
