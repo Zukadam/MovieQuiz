@@ -1,4 +1,4 @@
-import UIKit
+import Foundation
 
 struct AlertModel {
     // текст заголовка
@@ -7,7 +7,6 @@ struct AlertModel {
     let message: String
     // текст кнопки алерта
     let buttonText: String
-    // замыкание без параметров для действия по кнопке алерта completion.
-//    var completion ??? 
-    
+    // замыкание без параметров для действия по кнопке алерта completion
+    let completion: () -> Void
 }

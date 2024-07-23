@@ -26,10 +26,9 @@ final class MovieQuizViewController: UIViewController {
         self.questionFactory = questionFactory
         questionFactory.requestNextQuestion()
         
-        let alertPresenter = AlertPresenter(delegate: self)
+        let alertPresenter = AlertPresenter(delegate: self, viewController: self)
         self.alertPresenter = alertPresenter
-        
-    }
+        }
     // MARK: - IB Actions
     @IBAction private func noButtonClicked(_ sender: Any) {
         guard let currentQuestion else { return }
@@ -102,11 +101,15 @@ final class MovieQuizViewController: UIViewController {
             let text = correctAnswers == questionsAmount ?
                 "Поздравляем, вы ответили на 10 из 10!" :
                 "Вы ответили на \(correctAnswers) из 10, попробуйте ещё раз!"
-            let viewModel = QuizResultsViewModel(
+            let alertModel = AlertModel(
                 title: "Этот раунд окончен!",
-                text: text,
-                buttonText: "Сыграть ещё раз")
-            alertPresenter?.delegate?.show(quiz: viewModel)
+                message: text,
+                buttonText: "Сыграть ещё раз") {
+                    print("complition")
+                }
+            
+
+            alertPresenter?.delegate?.show(quiz: alertModel)
             
             previewImage.layer.borderWidth = 0
 
@@ -126,8 +129,8 @@ extension MovieQuizViewController: QuestionFactoryDelegate {
         
         let viewModel = convert(model: question)
         
-        DispatchQueue.main.async { [weak self] in
-            self?.show(quiz: viewModel)
+        DispatchQueue.main.async { [self] in // weak self
+            self.show(quiz: viewModel) //self.?
         }
     }
     
@@ -139,22 +142,17 @@ extension MovieQuizViewController: QuestionFactoryDelegate {
 }
 
 extension MovieQuizViewController: AlertPresenterDelegete {
-    func show(quiz result: QuizResultsViewModel) {
-        let alert = UIAlertController(
+    func show(quiz result: AlertModel) {
+        let alertModel = AlertModel(
             title: result.title,
-            message: result.text,
-            preferredStyle: .alert
-        )
-        
-        let action = UIAlertAction(title: result.buttonText, style: .default) { [weak self] _ in
-            guard let self else { return }
-            self.currentQuestionIndex = 0
-            self.correctAnswers = 0
-            questionFactory?.requestNextQuestion()
-        }
-        
-        alert.addAction(action)
-        self.present(alert, animated: true, completion: nil)
+            message: result.message,
+            buttonText: result.buttonText,
+            completion: { [weak self] in
+                self?.currentQuestionIndex = 0
+                self?.correctAnswers = 0
+                self?.questionFactory?.requestNextQuestion()
+            })
+        alertPresenter?.show(quiz: alertModel)
     }
 
 }

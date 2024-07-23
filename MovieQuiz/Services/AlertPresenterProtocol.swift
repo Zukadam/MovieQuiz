@@ -1,5 +1,5 @@
 import Foundation
 
-protocol AlertPresenterDelegete: AnyObject {
+protocol AlertPresenterProtocol {
     func show(quiz result: AlertModel)
 }
