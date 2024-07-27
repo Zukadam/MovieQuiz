@@ -15,7 +15,8 @@ final class MovieQuizViewController: UIViewController {
     private let questionsAmount: Int = 10
     private var questionFactory: QuestionFactoryProtocol?
     private var currentQuestion: QuizQuestion?
-    private var alertPresenter: AlertPresenter? = nil
+    private var alertPresenter: AlertPresenter?
+    private var statisticService: StatisticService?
     // MARK: - Overrides Methods
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -26,9 +27,14 @@ final class MovieQuizViewController: UIViewController {
         self.questionFactory = questionFactory
         questionFactory.requestNextQuestion()
         
-        let alertPresenter = AlertPresenter(delegate: self, viewController: self)
+        let alertPresenter = AlertPresenter(delegate: self)
         self.alertPresenter = alertPresenter
-        }
+        
+        let statisticService = StatisticService()
+        self.statisticService = statisticService
+    }
+    
+    
     // MARK: - IB Actions
     @IBAction private func noButtonClicked(_ sender: Any) {
         guard let currentQuestion else { return }
@@ -97,19 +103,32 @@ final class MovieQuizViewController: UIViewController {
     }
 
     private func showNextQuestionOrResults() {
+        guard let statisticService else {
+            print("Error: statisticService is nil")
+            return
+        }
         if currentQuestionIndex == questionsAmount - 1 {
+            statisticService.store(correct: correctAnswers, total: questionsAmount)
             let text = correctAnswers == questionsAmount ?
                 "Поздравляем, вы ответили на 10 из 10!" :
-                "Вы ответили на \(correctAnswers) из 10, попробуйте ещё раз!"
+            """
+            Ваш результат: \(correctAnswers)/10
+            Количество сыгранных квизов: \(statisticService.gamesCount)
+            Рекорд: \(statisticService.bestGame.correct)/10 (\(statisticService.bestGame.date.dateTimeString))
+            Средняя точность: \(String(format: "%.2f", statisticService.totalAccuracy))%
+            """
+            
             let alertModel = AlertModel(
                 title: "Этот раунд окончен!",
                 message: text,
-                buttonText: "Сыграть ещё раз") {
-                    print("complition")
-                }
+                buttonText: "Сыграть ещё раз", 
+                completion: { [weak self] in
+                    self?.currentQuestionIndex = 0
+                    self?.correctAnswers = 0
+                    self?.questionFactory?.requestNextQuestion()
+                })
             
-
-            alertPresenter?.delegate?.show(quiz: alertModel)
+            alertPresenter?.show(quiz: alertModel)
             
             previewImage.layer.borderWidth = 0
 
@@ -129,8 +148,8 @@ extension MovieQuizViewController: QuestionFactoryDelegate {
         
         let viewModel = convert(model: question)
         
-        DispatchQueue.main.async { [self] in // weak self
-            self.show(quiz: viewModel) //self.?
+        DispatchQueue.main.async { [weak self] in
+            self?.show(quiz: viewModel)
         }
     }
     
@@ -141,7 +160,7 @@ extension MovieQuizViewController: QuestionFactoryDelegate {
     }
 }
 
-extension MovieQuizViewController: AlertPresenterDelegete {
+extension MovieQuizViewController: AlertPresenterDelegate {
     func show(quiz result: AlertModel) {
         let alertModel = AlertModel(
             title: result.title,
@@ -154,5 +173,4 @@ extension MovieQuizViewController: AlertPresenterDelegete {
             })
         alertPresenter?.show(quiz: alertModel)
     }
-
 }
