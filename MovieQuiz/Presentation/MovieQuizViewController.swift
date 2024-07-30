@@ -34,19 +34,14 @@ final class MovieQuizViewController: UIViewController {
         self.statisticService = statisticService
     }
     
-    
     // MARK: - IB Actions
     @IBAction private func noButtonClicked(_ sender: Any) {
-        guard let currentQuestion else { return }
-        let givenAnswer = false
-        showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
+        answerGived(answer: false)
         changeStateButton(isEnabled: false)
     }
     
     @IBAction private func yesButtonClicked(_ sender: Any) {
-        guard let currentQuestion else { return }
-        let givenAnswer = true
-        showAnswerResult(isCorrect: givenAnswer == currentQuestion.correctAnswer)
+        answerGived(answer: true)
         changeStateButton(isEnabled: false)
     }
     // MARK: - Private Methods
@@ -100,6 +95,11 @@ final class MovieQuizViewController: UIViewController {
             guard let self else { return }
             self.showNextQuestionOrResults()
         }
+    }
+    
+    private func answerGived(answer: Bool) {
+        guard let currentQuestion else { return }
+        showAnswerResult(isCorrect: answer == currentQuestion.correctAnswer)
     }
 
     private func showNextQuestionOrResults() {
