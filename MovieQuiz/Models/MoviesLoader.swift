@@ -1,10 +1,5 @@
 import Foundation
-//Нам остаётся реализовать загрузку фильмов в методе loadMovies. Для этого:
-//Используйте переменные networkClient и mostPopularMoviesUrl.
-//В замыкании обработайте ошибочное состояние и передайте его дальше в handler.
-//Преобразуйте данные в MostPopularMovies, используя JSONDecoder.
-//Верните их, используя handler.
-//Мы предлагаем вам сделать это самостоятельно, чтобы потренировать полученные навыки.
+
 protocol MoviesLoading {
     func loadMovies(handler: @escaping (Result<MostPopularMovies, Error>) -> Void)
 }
