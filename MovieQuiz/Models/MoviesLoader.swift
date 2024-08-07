@@ -4,7 +4,7 @@ protocol MoviesLoading {
     func loadMovies(handler: @escaping (Result<MostPopularMovies, Error>) -> Void)
 }
 
-struct MoviesLoader: MoviesLoading {
+class MoviesLoader: MoviesLoading {
     // MARK: - NetworkClient
     private let networkClient = NetworkClient()
     
@@ -18,7 +18,8 @@ struct MoviesLoader: MoviesLoading {
     }
     
     func loadMovies(handler: @escaping (Result<MostPopularMovies, Error>) -> Void) {
-        networkClient.fetch(url: mostPopularMoviesUrl) { result in
+        networkClient.fetch(url: mostPopularMoviesUrl) { [weak self] result in
+            guard let self = self else { return }
             switch result {
             case .success(let data):
                 do {
