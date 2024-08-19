@@ -11,13 +11,12 @@ final class MovieQuizViewController: UIViewController {
     @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
     
     // MARK: - Private Properties
-    private var currentQuestionIndex = 0
     private var correctAnswers = 0
-    private let questionsAmount: Int = 10
     private var questionFactory: QuestionFactoryProtocol?
     private var currentQuestion: QuizQuestion?
     private var alertPresenter: AlertPresenter?
     private var statisticService: StatisticService?
+    private let presenter = MovieQuizPresenter()
     // MARK: - Overrides Methods
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -83,14 +82,6 @@ final class MovieQuizViewController: UIViewController {
         yesButton.isEnabled = isEnabled
     }
     
-    private func convert(model: QuizQuestion) -> QuizStepViewModel {
-        let questionStep = QuizStepViewModel(
-            image: UIImage(data: model.image) ?? UIImage(),
-            question: model.text,
-            questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)")
-        return questionStep
-    }
-    
     private func showAnswerResult(isCorrect: Bool) {
         if isCorrect { correctAnswers += 1 }
         previewImage.layer.masksToBounds = true
@@ -113,8 +104,9 @@ final class MovieQuizViewController: UIViewController {
             print("Error: statisticService is nil")
             return
         }
-        if currentQuestionIndex == questionsAmount - 1 {
-            statisticService.store(correct: correctAnswers, total: questionsAmount)
+        if presenter.isLastQuestion() {
+            statisticService.store(correct: correctAnswers, total: presenter.questionsAmount)
+            let questionsAmount = presenter.questionsAmount
             let text = correctAnswers == questionsAmount ?
                 "Поздравляем, вы ответили на 10 из 10!" :
             """
@@ -129,7 +121,7 @@ final class MovieQuizViewController: UIViewController {
                 message: text,
                 buttonText: "Сыграть ещё раз", 
                 completion: { [weak self] in
-                    self?.currentQuestionIndex = 0
+                    self?.presenter.resetQuestionIndex()
                     self?.correctAnswers = 0
                     self?.questionFactory?.requestNextQuestion()
                 })
@@ -139,7 +131,7 @@ final class MovieQuizViewController: UIViewController {
             previewImage.layer.borderWidth = 0
 
             } else { // 2
-                currentQuestionIndex += 1
+                presenter.switchToNextQuestion()
                 previewImage.layer.borderWidth = 0
                 self.questionFactory?.requestNextQuestion()
         }
@@ -162,7 +154,7 @@ final class MovieQuizViewController: UIViewController {
             message: message,
             buttonText: "Попробовать ещё раз",
             completion: { [weak self] in
-                self?.currentQuestionIndex = 0
+                self?.presenter.resetQuestionIndex()
                 self?.correctAnswers = 0
                 self?.questionFactory?.requestNextQuestion()
             })
@@ -176,7 +168,7 @@ extension MovieQuizViewController: QuestionFactoryDelegate {
         guard let question = question else { return }
         currentQuestion = question
         
-        let viewModel = convert(model: question)
+        let viewModel = presenter.convert(model: question)
         
         DispatchQueue.main.async { [weak self] in
             self?.show(quiz: viewModel)
@@ -206,7 +198,7 @@ extension MovieQuizViewController: AlertPresenterDelegate {
             message: result.message,
             buttonText: result.buttonText,
             completion: { [weak self] in
-                self?.currentQuestionIndex = 0
+                self?.presenter.resetQuestionIndex()
                 self?.correctAnswers = 0
                 self?.questionFactory?.requestNextQuestion()
             })
