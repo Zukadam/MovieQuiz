@@ -1,13 +1,14 @@
 import UIKit
 
 final class MovieQuizViewController: UIViewController {
+    
     // MARK: - IB Outlets
     @IBOutlet private weak var questionTitleLabel: UILabel!
     @IBOutlet private weak var indexLabel: UILabel!
     @IBOutlet private weak var previewImage: UIImageView!
     @IBOutlet private weak var questionLabel: UILabel!
-    @IBOutlet private weak var yesButton: UIButton!
-    @IBOutlet private weak var noButton: UIButton!
+    @IBOutlet weak var yesButton: UIButton!
+    @IBOutlet weak var noButton: UIButton!
     @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
     
     // MARK: - Private Properties
@@ -17,9 +18,12 @@ final class MovieQuizViewController: UIViewController {
     private var alertPresenter: AlertPresenter?
     private var statisticService: StatisticService?
     private let presenter = MovieQuizPresenter()
+    
     // MARK: - Overrides Methods
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        presenter.viewController = self
         
         setupView()
         
@@ -41,14 +45,17 @@ final class MovieQuizViewController: UIViewController {
     
     // MARK: - IB Actions
     @IBAction private func noButtonClicked(_ sender: Any) {
-        answerGiven(answer: false)
+        presenter.currentQuestion = currentQuestion
+        presenter.noButtonClicked()
         changeStateButton(isEnabled: false)
     }
     
     @IBAction private func yesButtonClicked(_ sender: Any) {
-        answerGiven(answer: true)
+        presenter.currentQuestion = currentQuestion
+        presenter.yesButtonClicked()
         changeStateButton(isEnabled: false)
     }
+    
     // MARK: - Private Methods
     private func setupView() {
         questionTitleLabel.font = UIFont(name: "YSDisplay-Medium", size: 20)
@@ -77,12 +84,7 @@ final class MovieQuizViewController: UIViewController {
         noButton.layer.cornerRadius = 15
     }
     
-    private func changeStateButton(isEnabled: Bool) {
-        noButton.isEnabled = isEnabled
-        yesButton.isEnabled = isEnabled
-    }
-    
-    private func showAnswerResult(isCorrect: Bool) {
+    func showAnswerResult(isCorrect: Bool) {
         if isCorrect { correctAnswers += 1 }
         previewImage.layer.masksToBounds = true
         previewImage.layer.borderWidth = 8
@@ -94,11 +96,6 @@ final class MovieQuizViewController: UIViewController {
         }
     }
     
-    private func answerGiven(answer: Bool) {
-        guard let currentQuestion else { return }
-        showAnswerResult(isCorrect: answer == currentQuestion.correctAnswer)
-    }
-
     private func showNextQuestionOrResults() {
         guard let statisticService else {
             print("Error: statisticService is nil")
@@ -130,12 +127,17 @@ final class MovieQuizViewController: UIViewController {
             
             previewImage.layer.borderWidth = 0
 
-            } else { // 2
+            } else {
                 presenter.switchToNextQuestion()
                 previewImage.layer.borderWidth = 0
                 self.questionFactory?.requestNextQuestion()
         }
         changeStateButton(isEnabled: true)
+    }
+    
+    private func changeStateButton(isEnabled: Bool) {
+        noButton.isEnabled = isEnabled
+        yesButton.isEnabled = isEnabled
     }
     
     private func showLoadingIndicator() {
