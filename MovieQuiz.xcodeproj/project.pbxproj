@@ -146,7 +146,6 @@
 				333077252C4AFE640046AA41 /* AlertModel.swift */,
 				333077312C5050870046AA41 /* GameResult.swift */,
 				33A9FE592C62B672007E610E /* MostPopularMovies.swift */,
-				33A9FE5B2C62E53F007E610E /* MoviesLoader.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -160,6 +159,7 @@
 				3330772F2C504ED20046AA41 /* StatisticServiceProtocol.swift */,
 				333077332C5053F10046AA41 /* StatisticService.swift */,
 				33A9FE572C62A2C2007E610E /* NetworkClient.swift */,
+				33A9FE5B2C62E53F007E610E /* MoviesLoader.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
