@@ -1,10 +1,33 @@
 import UIKit
 
-final class MovieQuizPresenter {
+protocol MovieQuizPresenterProtocol {
     
+    var view: MovieQuizViewProtocol? { get set }
+    var questionsAmount: Int { get }
+    var correctAnswers: Int { get set }
+    
+    func noButtonClicked()
+    func yesButtonClicked()
+    func isLastQuestion() -> Bool
+    func restartGame()
+    func switchToNextQuestion()
+    func didReceiveNextQuestion(question: QuizQuestion?)
+    func proceedToNextQuestionOrResults()
+    func show(quiz step: QuizStepViewModel)
+    func loadData()
+    func proceedWithAnswer(isCorrect: Bool)
+}
+
+final class MovieQuizPresenter: MovieQuizPresenterProtocol {
+
+    var correctAnswers = 0
+    weak var view: MovieQuizViewProtocol?
     let questionsAmount: Int = 10
-    weak var viewController: MovieQuizViewController?
-    
+
+    private var questionFactory: QuestionFactoryProtocol?
+    private var currentQuestion: QuizQuestion?
+    private var alertPresenter: AlertPresenter?
+    private let statisticService = StatisticService()
     private var currentQuestionIndex: Int = 0
 
     func noButtonClicked() {
@@ -19,11 +42,12 @@ final class MovieQuizPresenter {
         currentQuestionIndex == questionsAmount - 1
     }
     
-    func resetQuestionIndex() {
+    func restartGame() {
         currentQuestionIndex = 0
+        correctAnswers = 0
     }
     
-    func switchToNextQuestion() {
+    func switchToNextQuestion() { 
         currentQuestionIndex += 1
     }
     
@@ -35,28 +59,62 @@ final class MovieQuizPresenter {
         return questionStep
     }
     
-    private func answerGiven(answer: Bool) {
-        guard let currentQuestion else { return }
-        viewController?.showAnswerResult(isCorrect: answer == currentQuestion.correctAnswer)
+    func proceedToNextQuestionOrResults() {
+        if isLastQuestion() {
+            statisticService.store(correct: correctAnswers, total: questionsAmount)
+            let questionsAmount = questionsAmount
+            let text = correctAnswers == questionsAmount ?
+                "Поздравляем, вы ответили на 10 из 10!" :
+            """
+            Ваш результат: \(correctAnswers)/10
+            Количество сыгранных квизов: \(statisticService.gamesCount)
+            Рекорд: \(statisticService.bestGame.correct)/10 (\(statisticService.bestGame.date.dateTimeString))
+            Средняя точность: \(String(format: "%.2f", statisticService.totalAccuracy))%
+            """
+            
+            let alertModel = AlertModel(
+                title: "Этот раунд окончен!",
+                message: text,
+                buttonText: "Сыграть ещё раз",
+                completion: { [weak self] in
+                    self?.restartGame()
+                    self?.questionFactory?.requestNextQuestion()
+                })
+            
+            alertPresenter?.show(quiz: alertModel)
+            
+            } else {
+                switchToNextQuestion()
+                self.questionFactory?.requestNextQuestion()
+            }
+        view?.proceedToNextQuestionOrResultsDone()
     }
     
-    func didReceiveNextQuestion(question: QuizQuestion?) {
-        guard let question = question else { return }
-        currentQuestion = question
+    func loadData() {
+        let alertPresenter = AlertPresenter(delegate: view?.vc)
+        self.alertPresenter = alertPresenter
         
-        let viewModel = convert(model: question)
-        
-        DispatchQueue.main.async { [weak self] in
-            self?.viewController?.show(quiz: viewModel)
+        let questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate: self)
+        view?.showLoadingIndicator()
+        questionFactory.loadData()
+
+        self.questionFactory = questionFactory
+        questionFactory.requestNextQuestion()
+    }
+    
+    func proceedWithAnswer(isCorrect: Bool) {
+        if isCorrect { correctAnswers += 1 }
+        view?.highlightImageBorder(isCorrectAnswer: isCorrect)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            guard let self else { return }
+            proceedToNextQuestionOrResults()
         }
     }
 
-    private var correctAnswers = 0
-    private var questionFactory: QuestionFactoryProtocol?
-    private var currentQuestion: QuizQuestion?
-    private var alertPresenter: AlertPresenter?
-
-
+    private func answerGiven(answer: Bool) {
+        guard let currentQuestion else { return }
+        proceedWithAnswer(isCorrect: answer == currentQuestion.correctAnswer)
+    }
 }
 
 extension MovieQuizPresenter: AlertPresenterDelegate {
@@ -67,10 +125,46 @@ extension MovieQuizPresenter: AlertPresenterDelegate {
             message: result.message,
             buttonText: result.buttonText,
             completion: { [weak self] in
-                self?.resetQuestionIndex()
-                self?.correctAnswers = 0
+                self?.restartGame()
                 self?.questionFactory?.requestNextQuestion()
             })
+        alertPresenter?.show(quiz: alertModel)
+    }
+}
+
+extension MovieQuizPresenter: QuestionFactoryDelegate {
+
+    func show(quiz step: QuizStepViewModel) {
+        view?.prepareUI(quiz: step)
+    }
+    
+    func didReceiveNextQuestion(question: QuizQuestion?) {
+        guard let question = question else { return }
+        currentQuestion = question
+        
+        let viewModel = convert(model: question)
+        
+        DispatchQueue.main.async { [weak self] in
+            self?.show(quiz: viewModel)
+        }
+    }
+    
+    func didLoadDataFromServer() {
+        view?.hideLoadingIndicator()
+        questionFactory?.requestNextQuestion()    }
+    
+    func didFailToLoadData(with error: any Error) {
+        view?.hideLoadingIndicator()
+        
+        let alertModel = AlertModel(
+            title: "Что-то пошло не так(",
+            message: error.localizedDescription,
+            buttonText: "Попробовать ещё раз",
+            completion: { [weak self] in
+                self?.restartGame()
+                self?.questionFactory?.requestNextQuestion()
+            })
+        
         alertPresenter?.show(quiz: alertModel)
     }
 }
