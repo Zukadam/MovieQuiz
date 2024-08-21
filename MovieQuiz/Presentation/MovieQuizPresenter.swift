@@ -11,11 +11,16 @@ protocol MovieQuizPresenterProtocol {
     func isLastQuestion() -> Bool
     func restartGame()
     func switchToNextQuestion()
-    func didReceiveNextQuestion(question: QuizQuestion?)
+    func convert(model: QuizQuestion) -> QuizStepViewModel
     func proceedToNextQuestionOrResults()
-    func show(quiz step: QuizStepViewModel)
     func loadData()
     func proceedWithAnswer(isCorrect: Bool)
+    func answerGiven(answer: Bool)
+    func didReceiveNextQuestion(question: QuizQuestion?)
+    func show(quiz step: QuizStepViewModel)
+
+
+
 }
 
 final class MovieQuizPresenter: MovieQuizPresenterProtocol {
@@ -111,7 +116,7 @@ final class MovieQuizPresenter: MovieQuizPresenterProtocol {
         }
     }
 
-    private func answerGiven(answer: Bool) {
+    func answerGiven(answer: Bool) {
         guard let currentQuestion else { return }
         proceedWithAnswer(isCorrect: answer == currentQuestion.correctAnswer)
     }

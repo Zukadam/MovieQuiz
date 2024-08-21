@@ -2,11 +2,13 @@ import UIKit
 protocol MovieQuizViewProtocol: AnyObject {
     var vc: UIViewController { get }
 
-    func proceedToNextQuestionOrResultsDone()
+    func highlightImageBorder(isCorrectAnswer: Bool)
+    func removeBorder()
     func showLoadingIndicator()
     func hideLoadingIndicator()
+    func proceedToNextQuestionOrResultsDone()
     func prepareUI(quiz step: QuizStepViewModel)
-    func highlightImageBorder(isCorrectAnswer: Bool)
+    func changeStateButton(isEnabled: Bool)
 }
 
 final class MovieQuizViewController: UIViewController, MovieQuizViewProtocol {
@@ -63,27 +65,26 @@ final class MovieQuizViewController: UIViewController, MovieQuizViewProtocol {
     func removeBorder() {
         previewImage.layer.borderWidth = 0
     }
-    
     func showLoadingIndicator() {
         activityIndicator.startAnimating()
     }
-    
+
     func hideLoadingIndicator() {
         activityIndicator.stopAnimating()
     }
-    
+
     func proceedToNextQuestionOrResultsDone() {
         removeBorder()
         changeStateButton(isEnabled: true)
     }
-    
+
     func prepareUI(quiz step: QuizStepViewModel) {
         indexLabel.text = step.questionNumber
         previewImage.image = step.image
         questionLabel.text = step.question
     }
-    
-    private func changeStateButton(isEnabled: Bool) {
+
+    func changeStateButton(isEnabled: Bool) {
         noButton.isEnabled = isEnabled
         yesButton.isEnabled = isEnabled
     }
