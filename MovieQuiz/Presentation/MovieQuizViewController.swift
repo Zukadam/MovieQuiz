@@ -3,12 +3,10 @@ protocol MovieQuizViewProtocol: AnyObject {
     var vc: UIViewController { get }
 
     func highlightImageBorder(isCorrectAnswer: Bool)
-    func removeBorder()
     func showLoadingIndicator()
     func hideLoadingIndicator()
     func proceedToNextQuestionOrResultsDone()
     func prepareUI(quiz step: QuizStepViewModel)
-    func changeStateButton(isEnabled: Bool)
 }
 
 final class MovieQuizViewController: UIViewController, MovieQuizViewProtocol {
@@ -62,9 +60,6 @@ final class MovieQuizViewController: UIViewController, MovieQuizViewProtocol {
         previewImage.layer.borderColor = isCorrectAnswer ? UIColor.ypGreen.cgColor : UIColor.ypRed.cgColor
     }
     
-    func removeBorder() {
-        previewImage.layer.borderWidth = 0
-    }
     func showLoadingIndicator() {
         activityIndicator.startAnimating()
     }
@@ -84,11 +79,17 @@ final class MovieQuizViewController: UIViewController, MovieQuizViewProtocol {
         questionLabel.text = step.question
     }
 
-    func changeStateButton(isEnabled: Bool) {
+
+    // MARK: - Private Methods
+    private func removeBorder() {
+        previewImage.layer.borderWidth = 0
+    }
+    
+    private func changeStateButton(isEnabled: Bool) {
         noButton.isEnabled = isEnabled
         yesButton.isEnabled = isEnabled
     }
-    // MARK: - Private Methods
+    
     private func setupView() {
         questionTitleLabel.font = UIFont(name: "YSDisplay-Medium", size: 20)
         questionTitleLabel.textColor = .ypWhiteIOS

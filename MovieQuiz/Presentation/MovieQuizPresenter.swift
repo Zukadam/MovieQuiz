@@ -3,31 +3,19 @@ import UIKit
 protocol MovieQuizPresenterProtocol {
     
     var view: MovieQuizViewProtocol? { get set }
-    var questionsAmount: Int { get }
-    var correctAnswers: Int { get set }
-    
     func noButtonClicked()
     func yesButtonClicked()
-    func isLastQuestion() -> Bool
-    func restartGame()
-    func switchToNextQuestion()
     func convert(model: QuizQuestion) -> QuizStepViewModel
-    func proceedToNextQuestionOrResults()
     func loadData()
     func proceedWithAnswer(isCorrect: Bool)
-    func answerGiven(answer: Bool)
     func didReceiveNextQuestion(question: QuizQuestion?)
-    func show(quiz step: QuizStepViewModel)
-
-
-
 }
 
 final class MovieQuizPresenter: MovieQuizPresenterProtocol {
 
-    var correctAnswers = 0
+    private var correctAnswers = 0
     weak var view: MovieQuizViewProtocol?
-    let questionsAmount: Int = 10
+    private let questionsAmount: Int = 10
 
     private var questionFactory: QuestionFactoryProtocol?
     private var currentQuestion: QuizQuestion?
@@ -43,17 +31,25 @@ final class MovieQuizPresenter: MovieQuizPresenterProtocol {
         answerGiven(answer: true)
     }
     
-    func isLastQuestion() -> Bool {
-        currentQuestionIndex == questionsAmount - 1
+    func loadData() {
+        let alertPresenter = AlertPresenter(delegate: view?.vc)
+        self.alertPresenter = alertPresenter
+        
+        let questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate: self)
+        view?.showLoadingIndicator()
+        questionFactory.loadData()
+
+        self.questionFactory = questionFactory
+        questionFactory.requestNextQuestion()
     }
     
-    func restartGame() {
-        currentQuestionIndex = 0
-        correctAnswers = 0
-    }
-    
-    func switchToNextQuestion() { 
-        currentQuestionIndex += 1
+    func proceedWithAnswer(isCorrect: Bool) {
+        if isCorrect { correctAnswers += 1 }
+        view?.highlightImageBorder(isCorrectAnswer: isCorrect)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            guard let self else { return }
+            proceedToNextQuestionOrResults()
+        }
     }
     
     func convert(model: QuizQuestion) -> QuizStepViewModel {
@@ -63,8 +59,26 @@ final class MovieQuizPresenter: MovieQuizPresenterProtocol {
             questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)")
         return questionStep
     }
+
+    private func answerGiven(answer: Bool) {
+        guard let currentQuestion else { return }
+        proceedWithAnswer(isCorrect: answer == currentQuestion.correctAnswer)
+    }
     
-    func proceedToNextQuestionOrResults() {
+    private func isLastQuestion() -> Bool {
+        currentQuestionIndex == questionsAmount - 1
+    }
+    
+    private func restartGame() {
+        currentQuestionIndex = 0
+        correctAnswers = 0
+    }
+    
+    private func switchToNextQuestion() {
+        currentQuestionIndex += 1
+    }
+    
+    private func proceedToNextQuestionOrResults() {
         if isLastQuestion() {
             statisticService.store(correct: correctAnswers, total: questionsAmount)
             let questionsAmount = questionsAmount
@@ -93,32 +107,6 @@ final class MovieQuizPresenter: MovieQuizPresenterProtocol {
                 self.questionFactory?.requestNextQuestion()
             }
         view?.proceedToNextQuestionOrResultsDone()
-    }
-    
-    func loadData() {
-        let alertPresenter = AlertPresenter(delegate: view?.vc)
-        self.alertPresenter = alertPresenter
-        
-        let questionFactory = QuestionFactory(moviesLoader: MoviesLoader(), delegate: self)
-        view?.showLoadingIndicator()
-        questionFactory.loadData()
-
-        self.questionFactory = questionFactory
-        questionFactory.requestNextQuestion()
-    }
-    
-    func proceedWithAnswer(isCorrect: Bool) {
-        if isCorrect { correctAnswers += 1 }
-        view?.highlightImageBorder(isCorrectAnswer: isCorrect)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            guard let self else { return }
-            proceedToNextQuestionOrResults()
-        }
-    }
-
-    func answerGiven(answer: Bool) {
-        guard let currentQuestion else { return }
-        proceedWithAnswer(isCorrect: answer == currentQuestion.correctAnswer)
     }
 }
 

@@ -2,8 +2,6 @@ import XCTest
 @testable import MovieQuiz
 
 final class MovieQuizViewControllerMock: MovieQuizViewProtocol {
-    var vc: UIViewController = UIViewController()
-
     func highlightImageBorder(isCorrectAnswer: Bool) {
         
     }
@@ -15,7 +13,9 @@ final class MovieQuizViewControllerMock: MovieQuizViewProtocol {
     func hideLoadingIndicator() {
         
     }
-        
+    
+    var vc: UIViewController = UIViewController()
+    
     func removeBorder() {
         
     }
@@ -36,8 +36,11 @@ final class MovieQuizViewControllerMock: MovieQuizViewProtocol {
 
 final class MovieQuizPresenterTests: XCTestCase {
     func testPresenterConvertModel() throws {
-        _ = MovieQuizViewControllerMock()
+        let viewControllerMock = MovieQuizViewControllerMock()
+        
         let sut = MovieQuizPresenter()
+        sut.view = viewControllerMock
+        
         
         let emptyData = Data()
         let question = QuizQuestion(image: emptyData, text: "Question Text", correctAnswer: true)
