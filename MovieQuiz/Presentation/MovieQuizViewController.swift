@@ -183,17 +183,4 @@ extension MovieQuizViewController: QuestionFactoryDelegate {
     }
 }
 
-extension MovieQuizViewController: AlertPresenterDelegate {
-    func show(quiz result: AlertModel) {
-        let alertModel = AlertModel(
-            title: result.title,
-            message: result.message,
-            buttonText: result.buttonText,
-            completion: { [weak self] in
-                self?.presenter.resetQuestionIndex()
-                self?.correctAnswers = 0
-                self?.questionFactory?.requestNextQuestion()
-            })
-        alertPresenter?.show(quiz: alertModel)
-    }
-}
+

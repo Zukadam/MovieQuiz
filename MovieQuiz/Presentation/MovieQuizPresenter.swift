@@ -4,7 +4,6 @@ final class MovieQuizPresenter {
     
     let questionsAmount: Int = 10
     weak var viewController: MovieQuizViewController?
-    var currentQuestion: QuizQuestion?
     
     private var currentQuestionIndex: Int = 0
 
@@ -52,5 +51,26 @@ final class MovieQuizPresenter {
         }
     }
 
+    private var correctAnswers = 0
+    private var questionFactory: QuestionFactoryProtocol?
+    private var currentQuestion: QuizQuestion?
+    private var alertPresenter: AlertPresenter?
 
+
+}
+
+extension MovieQuizPresenter: AlertPresenterDelegate {
+    
+    func show(quiz result: AlertModel) {
+        let alertModel = AlertModel(
+            title: result.title,
+            message: result.message,
+            buttonText: result.buttonText,
+            completion: { [weak self] in
+                self?.resetQuestionIndex()
+                self?.correctAnswers = 0
+                self?.questionFactory?.requestNextQuestion()
+            })
+        alertPresenter?.show(quiz: alertModel)
+    }
 }
