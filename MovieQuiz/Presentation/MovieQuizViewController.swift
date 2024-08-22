@@ -16,8 +16,8 @@ final class MovieQuizViewController: UIViewController, MovieQuizViewProtocol {
     @IBOutlet private weak var indexLabel: UILabel!
     @IBOutlet private weak var previewImage: UIImageView!
     @IBOutlet private weak var questionLabel: UILabel!
-    @IBOutlet weak var yesButton: UIButton!
-    @IBOutlet weak var noButton: UIButton!
+    @IBOutlet private weak var yesButton: UIButton!
+    @IBOutlet private weak var noButton: UIButton!
     @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
     
     // MARK: - Public Properties
